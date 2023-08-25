@@ -11,6 +11,6 @@ $schema: https://azuremlschemas.azureedge.net/latest/data.schema.json
 
 type: uri_folder
 name: mnist_images
-version: sample
-description: A sample of MNIST dataset images containing only 3s and 7s
-path: './mnist_sample'
+version: subset
+description: A subset of MNIST dataset images containing only 3s and 7s
+path: azureml://datastores/data_assets/paths/mnist_images/subset
