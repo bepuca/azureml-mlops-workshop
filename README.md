@@ -1,3 +1,30 @@
+# AzureML MLOps Workshop
+
+This workshop aims to illustrate the MLOps lifecycle (see image below) of a ML project by leveraging the [AzureML Scaffolding template](https://github.com/bepuca/azureml-scaffolding) and building a complete (simple) system from scratch. It also aims to demonstrate how to leverage the tooling to maximize developer experience.
+
+![MLOps lifecycle](mlops_lifecycle.png)
+
+## Requirements
+
+Before attending the workshop, it will be extremely helpful if you can make sure of the following:
+
+1. You have access to an Azure subscription. You have [created an Azure ML workspace](https://learn.microsoft.com/en-us/azure/machine-learning/quickstart-create-resources?view=azureml-api-2#create-the-workspace) in the said subscription.
+2. In your workspace, you have created the following resources:
+   - A CPU [compute instance](https://learn.microsoft.com/en-us/azure/machine-learning/how-to-create-compute-instance) **with SSH access enabled (IMPORTANT)**. The CPU does not need to be big. Cheap is good. I recommend using the UI to create them from [Azure ML Studio](https://ml.azure.com).
+   - A GPU compute instance **also with SSH access enabled**. Once again, whatever you have quota for. Any GPU will do for the exercises.
+   - A CPU [compute cluster](https://learn.microsoft.com/en-us/azure/machine-learning/how-to-create-attach-compute-cluster?view=azureml-api-2&tabs=azure-studio) with 2 nodes. Once again, any okayish CPU will do.
+   - A GPU compute cluster with **at least 2 nodes**. Any GPU you have quota for. Cheap is ok.
+3. Ideally a **UNIX laptop** (either macOS or linux, Windows is a bit more hairy). If you usually work in Windows (even in WSL) no worries, we will use the compute instance instead.
+4. VSCode with [SSH connections configured](https://code.visualstudio.com/docs/remote/ssh-tutorial) for both compute instances created in step 2. Make sure you can connect to them.
+5. If you do have a UNIX laptop, [**Docker**](https://docs.docker.com/engine/install/) needs to be installed on it (it is installed in all compute instances by default).
+6. If you do have a UNIX laptop, [**conda**](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html) needs to be installed on it (it is installed in all compute instances by default). If you do not wish to install it, we can work with the compute instance instead.
+7. In all mentioned machines (laptop, CPU compute instance, GPU compute instance), have the [**azure CLI**](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli) with the **ML extension with version 2.16.0** (I will explain why). Assuming you have the generic CLI installed, run the following to ensure the ML extension has the right version:
+   - `az extension remove --name ml`
+   - `az extension add --name ml --version 2.16.0`
+8. This repository cloned both in your laptop (if UNIX) and the two computes instances. For the compute instances, **clone it in the `localfiles` folder**. Each compute instance has a `cloudfiles` and a `localfiles` folder. We will discuss why we need `localfiles` in the workshop. Clone by running `git clone -c core.symlinks=true <Repo URL>`. We will discuss why.
+9. Ideally, read the [A layered approach to MLOps](https://medium.com/data-science-at-microsoft/a-layered-approach-to-mlops-d935beefca2e?source=friends_link&sk=acb75fa6fc74a8db7e36f4262a3b0a06), a blogpost introducing the why's of the AzureML scaffolding template we will use. We will discuss them in the workshop too, but it can help come prepared (and potentially with questions).
+10. If you fancy it, you may read the rest of the README (which comes from the template) and see if you manage to run the example experiment both in your machine and in a compute cluster (we will review this in the workshop regardless).
+
 # AzureML Scaffolding
 
 The goal of this project is to provide a minimal scaffolding to make it easier to work effectively with [Azure Machine Learning service](https://docs.microsoft.com/en-us/azure/machine-learning/). Our main focus is on the (often overlooked) Data Scientist's inner loop - that is, the work done during investigation/experimentation phase until model is "ready" for deployment. The common problem we noticed while working on multiple projects with different teams and organizations is that whenever we introduce any MLOps concepts and start operationalizing the project - it's usually a one-way ticket which changes the DS inner loop and makes it hard to continue experimenting and improving the solution. The main idea is to lower the friction of using AzureML and enable what we call `Continuous Experimentation`. This means that the data scientists are always enabled to keep experimenting and productionalizing or deploying models is not a blocker for that.
