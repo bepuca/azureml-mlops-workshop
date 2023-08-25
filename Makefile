@@ -118,3 +118,15 @@ dependency: check-arg-exp check-exp-exists check-arg-dep
 	for i in `seq 1 1 $$subexp_depth`; do rel_path=$$rel_path/..; done; \
 	ln -s $$rel_path/common/$(dep) .
 	@echo "Dependency successfully created!"
+
+
+# Use the base command `check-arg` to ensure `pattern` argument was passed
+check-arg-pattern: arg=pattern
+check-arg-pattern: check-arg
+
+download-data: check-arg-pattern
+	az storage blob download-batch \
+		--source $(BLOB_STORAGE_CONTAINER) --account-name $(BLOB_STORAGE_ACCOUNT) \
+		--destination ./data \
+		--pattern $(pattern) \
+		$(run-xargs)
