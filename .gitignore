@@ -10,6 +10,10 @@
 # Local entrypoints should be developer-specific
 **/local.py
 
+# devcontainers should be personal if things need to be modifed
+/.devcontainer/*
+!/.devcontainer/example
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -145,3 +149,4 @@ dmypy.json
 
 # IDE stuff
 .idea/*
+.vscode/*

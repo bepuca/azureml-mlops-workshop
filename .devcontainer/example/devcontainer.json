@@ -1,0 +1,32 @@
+// File only needed for VSCode users to have proper Docker based interpreters
+{
+	// ACTION NEEDED: For sanity, change "name" to the name of the experiment
+	"name": "<experiment_name>",
+	"build": {"dockerfile": "../../src/<experiment_name>/environment/Dockerfile"},
+	"runArgs":[
+		// ACTION NEEDED: Uncomment the next line if your local machine has GPUs available
+		// "--gpus", "all", "--ipc", "host"
+	],
+	"remoteEnv": {
+		// Make the `common` package available when running things local
+		// ACTION NEEDED: If your code folder is not `src` you need to change the last bit
+		"PYTHONPATH": "${containerEnv:PATH}:${containerWorkspaceFolder}/src/<experiment_name>:${containerWorkspaceFolder}/src"
+	},
+    "customizations": {
+        "vscode": {
+          // Add the IDs of extensions you want installed when the container is created.
+          "extensions": [
+			// Ensure we have all the goodies of VSCode pytho
+			"ms-python.python",
+			// Ensure we can run jupyter notebooks in VSCode without manual installs
+			"ms-toolsai.jupyter"
+		]
+        }
+    },
+	// ACTION NEEDED: The name after /workspaces/ needs to be changed to your project name (and folder name)
+	"workspaceFolder": "/workspaces/azureml-mlops-workshop",
+	// Need git for VSCode to color code modifications.
+    "features": {
+        "ghcr.io/devcontainers/features/git:1": {"version": "latest"}
+    }
+}
