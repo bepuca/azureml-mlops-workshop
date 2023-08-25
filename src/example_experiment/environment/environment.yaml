@@ -3,6 +3,9 @@ channels:
 dependencies:
   - python=3.10.12
   - pytest=7.4.0
+  - pillow=10.0.0
+  - numpy=1.25.2
+  - matplotlib=3.7.2
   - pip:
     # cleaner scripts than using argparse
     - func-to-script==0.1.0
