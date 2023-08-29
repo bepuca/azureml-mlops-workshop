@@ -1,0 +1,59 @@
+# Tells Azure ML what kind of YAML this is.
+#  Docs: https://docs.microsoft.com/en-us/azure/machine-learning/reference-yaml-job-command
+$schema: https://azuremlschemas.azureedge.net/latest/commandJob.schema.json
+
+# Name of the experiment where all jobs will end up in the Azure ML dashboard
+experiment_name: neural_net
+
+# What to run
+command: >-
+  accelerate launch
+  --config_file accelerate_config.yaml
+  --num_machines ${{inputs.num_machines}}
+  --num_processes ${{inputs.num_processes}}
+  --machine_rank $NODE_RANK
+  --main_process_ip $MASTER_ADDR
+  --main_process_port $MASTER_PORT
+  main.py
+  --images_path ${{inputs.images_path}}
+  --splits_path ${{inputs.splits_path}}
+  --num_epochs ${{inputs.num_epochs}}
+  --batch_size ${{inputs.batch_size}}
+  --learning_rate ${{inputs.learning_rate}}
+  --model_save_path ${{inputs.model_save_path}}
+
+inputs:
+  images_path:
+    type: uri_folder
+    path: azureml:mnist_images:subset
+  splits_path:
+    type: uri_folder
+    path: azureml:dataset_splits:2023-08-28_8
+  model_save_path: './outputs'
+  num_epochs: 5
+  batch_size: 32
+  learning_rate: 0.001
+  num_processes: 1
+  num_machines: 1
+
+# What code to make available
+code: .
+
+# Where to run it
+environment:
+  build:
+    path: ./environment
+
+compute: azureml:gpu-lion-cluster
+
+# Where to run it
+environment:
+  build:
+    path: ./environment
+
+distribution:
+  type: pytorch
+  process_count_per_instance: 1
+resources:
+  instance_count: 1
+  shm_size: 50G
