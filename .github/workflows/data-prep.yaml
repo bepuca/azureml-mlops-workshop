@@ -1,0 +1,105 @@
+# This workflow runs a dataprep experiment and ensures the resulting data asset is versioned.
+# Additionally, it ensures the run and dataset is properly documented by means of tags corresponding
+# to the arguments passed to the script. This should be enough to figure out what a detaset entails.
+
+name: DataPrep
+run-name: "#${{ github.run_number }}"
+
+permissions:
+  id-token: write
+  contents: read
+
+# Controls when the workflow will run
+on:
+  # Manual triggers require the workflow to be merged into main. This allows trigger without merge
+  # push:
+  #   branches:
+  #     - '1_baseline'
+  # # For now, we only want manual triggering of this workflow, which this enables
+  # workflow_dispatch:
+  #   inputs:
+  #     reason:
+  #       description: 'Why was this dataset version created'
+  #       required: true
+  #     n_eval_samples:
+  #       description: 'Number of desired samples in eval set'
+  #       required: true
+  #       default: '1000'
+  #     n_test_samples:
+  #       description: 'Number of desired samples in test set'
+  #       required: true
+  #       default: '1000'
+
+env:
+  AZ_CLI_VERSION: 2.47.0
+  AZ_ML_CLI_VERSION: 2.16.0
+  DATASTORE_PATH: ''
+  reason: 'A very good reason'
+  n_eval_samples: 1000
+  n_test_samples: 1000
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  dataprep:
+    name: Data Preparation
+    runs-on: ubuntu-latest
+    steps:
+    # Check-out repository so the job can use it
+    - uses: actions/checkout@v3
+
+    - name: 'Log into Azure'
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Generate dataset version
+      run: echo "VERSION=$(date +'%Y-%m-%d')_${{ github.run_number }}" >> $GITHUB_ENV
+
+    - name: Generate dataset path
+      run: echo "DATASET_PATH=azureml://datastores/data_assets/paths/dataset_splits/$VERSION" >> $GITHUB_ENV
+
+    - name: Run dataprep job
+      uses: azure/CLI@v1
+      with:
+        azcliversion: ${{ env.AZ_CLI_VERSION }}
+        inlinescript: |
+          az extension add -n ml --version $AZ_ML_CLI_VERSION
+
+          job_xargs="--set inputs.n_eval_samples=${{ env.n_eval_samples }} \
+                     --set inputs.n_test_samples=${{ env.n_test_samples }} \
+                     --set outputs.outputs_path.path=$DATASET_PATH \
+                     --set experiment_name=dataprep \
+                     --name $VERSION \
+                     --stream"
+          make job exp=dataprep job-xargs="$job_xargs"
+
+          source config.env
+          status=$(az ml job show --name "$VERSION" -w $WORKSPACE -g $RESOURCE_GROUP --query "status" -o tsv)
+
+          if [ "$status" = "Completed" ]; then
+              echo "Job completed"
+              exit 0
+          else
+              echo "Job not completed"
+              exit 1
+          fi
+
+    - name: Register dataset
+      uses: azure/CLI@v1
+      with:
+        azcliversion: ${{ env.AZ_CLI_VERSION }}
+        inlinescript: |
+          az extension add -n ml --version $AZ_ML_CLI_VERSION
+
+          source config.env
+          url=$(az ml job list -w $WORKSPACE -g $RESOURCE_GROUP --query "[?name == \`$VERSION\`].services.Studio.endpoint" -o tsv)
+
+          az ml data create \
+            --workspace-name $WORKSPACE --resource-group $RESOURCE_GROUP \
+            --file $CODE_PATH/dataprep/azure-ml-dataset.yaml \
+            --set description="Job url: $url" \
+            --set version=$VERSION \
+            --set path=$DATASET_PATH \
+            --set tags.reason="${{ env.reason }}" \
+            --set tags.n_eval_samples=${{ env.n_eval_samples }} \
+            --set tags.n_test_samples=${{ env.n_test_samples }}

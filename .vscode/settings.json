@@ -1,6 +1,5 @@
 {
     "python.testing.pytestArgs": [
-        "src/example_experiment",
-        "src/common"
+        "src/random_forest",
     ],
 }

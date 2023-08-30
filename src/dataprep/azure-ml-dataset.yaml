@@ -1,0 +1,9 @@
+$schema: https://azuremlschemas.azureedge.net/latest/data.schema.json
+
+type: uri_folder
+name: dataset_splits
+description: CSV with what image belongs to what split along with their label
+
+# IMPORTANT: Version and dataset are defined dynamically by the github workflow
+version: test
+path: azureml://datastores/data_assets/paths/dataset_splits/test

@@ -1,0 +1,37 @@
+# Tells Azure ML what kind of YAML this is.
+#  Docs: https://docs.microsoft.com/en-us/azure/machine-learning/reference-yaml-job-command
+$schema: https://azuremlschemas.azureedge.net/latest/commandJob.schema.json
+
+# Name of the experiment where all jobs will end up in the Azure ML dashboard
+experiment_name: dataprep-test
+
+# What to run
+command: >-
+  python main.py \
+    --images_path ${{inputs.images_path}} \
+    --output_path ${{outputs.outputs_path}} \
+    --n_eval_samples ${{inputs.n_eval_samples}} \
+    --n_test_samples ${{inputs.n_test_samples}}
+
+inputs:
+  images_path:
+    type: uri_folder  # default, can be changed to `uri_file` if data_path points to a file
+    path: azureml:mnist_images:subset
+  n_eval_samples: 1000
+  n_test_samples: 1000
+
+outputs:
+  outputs_path:
+    type: uri_folder
+    path: azureml://datastores/data_assets/paths/dataset_splits/test
+
+
+# What code to make available
+code: .
+
+# Where to run it
+environment:
+  build:
+    path: ./environment
+
+compute: azureml:cpu-cat-cluster
