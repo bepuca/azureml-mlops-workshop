@@ -6,6 +6,7 @@ import torch
 from func_to_script import script
 from PIL import Image
 from pytorch_accelerated import Trainer
+from pytorch_accelerated.callbacks import LogMetricsCallback, get_default_callbacks
 from torch import nn, optim
 from torchvision import transforms
 from tqdm import tqdm
@@ -50,6 +51,15 @@ class MNISTDataset(torch.utils.data.Dataset):
         if self.transform is not None:
             image = self.transform(image)
         return image, label
+
+
+class AzureMLLoggerCallback(LogMetricsCallback):
+    def __init__(self, logger: AzureMLLogger):
+        self.logger = AzureMLLogger()
+
+    def log_metrics(self, trainer, metrics):
+        if trainer.run_config.is_world_process_zero:
+            self.logger.log_metrics(metrics)
 
 
 def get_labels_and_preds(model: nn.Module, dataset: MNISTDataset) -> tuple[list[int], list[int]]:
@@ -103,6 +113,7 @@ def main(
         model,
         loss_func=loss_func,
         optimizer=optimizer,
+        callbacks=[*get_default_callbacks(), AzureMLLoggerCallback(logger)],
     )
 
     trainer.train(
@@ -112,23 +123,24 @@ def main(
         per_device_batch_size=batch_size,
     )
 
-    scripted_model = torch.jit.script(trainer.get_model())
-    scripted_model.eval()
-    scripted_model.save(model_filepath)
+    if trainer.run_config.is_world_process_zero:
+        scripted_model = torch.jit.script(trainer.get_model())
+        scripted_model.eval()
+        scripted_model.save(model_filepath)
 
-    print("Getting predictions")
-    y_train, y_train_pred = get_labels_and_preds(scripted_model, train_dataset)
-    y_eval, y_eval_pred = get_labels_and_preds(scripted_model, eval_dataset)
+        print("Getting predictions")
+        y_train, y_train_pred = get_labels_and_preds(scripted_model, train_dataset)
+        y_eval, y_eval_pred = get_labels_and_preds(scripted_model, eval_dataset)
 
-    print("Calculating metrics")
-    train_metrics = get_evaluation_metrics(y_train, y_train_pred)
-    eval_metrics = get_evaluation_metrics(y_eval, y_eval_pred)
+        print("Calculating metrics")
+        train_metrics = get_evaluation_metrics(y_train, y_train_pred)
+        eval_metrics = get_evaluation_metrics(y_eval, y_eval_pred)
 
-    metrics = {
-        **{f"train_{k}": v for k, v in train_metrics.items()},
-        **{f"eval_{k}": v for k, v in eval_metrics.items()},
-    }
-    logger.log_metrics(metrics)
+        metrics = {
+            **{f"train_{k}": v for k, v in train_metrics.items()},
+            **{f"eval_{k}": v for k, v in eval_metrics.items()},
+        }
+        logger.log_metrics(metrics)
 
 
 if __name__ == "__main__":
