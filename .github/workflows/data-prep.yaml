@@ -11,32 +11,24 @@ permissions:
 
 # Controls when the workflow will run
 on:
-  # Manual triggers require the workflow to be merged into main. This allows trigger without merge
-  # push:
-  #   branches:
-  #     - '1_baseline'
-  # # For now, we only want manual triggering of this workflow, which this enables
-  # workflow_dispatch:
-  #   inputs:
-  #     reason:
-  #       description: 'Why was this dataset version created'
-  #       required: true
-  #     n_eval_samples:
-  #       description: 'Number of desired samples in eval set'
-  #       required: true
-  #       default: '1000'
-  #     n_test_samples:
-  #       description: 'Number of desired samples in test set'
-  #       required: true
-  #       default: '1000'
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Why was this dataset version created'
+        required: true
+      n_eval_samples:
+        description: 'Number of desired samples in eval set'
+        required: true
+        default: '1000'
+      n_test_samples:
+        description: 'Number of desired samples in test set'
+        required: true
+        default: '1000'
 
 env:
   AZ_CLI_VERSION: 2.47.0
   AZ_ML_CLI_VERSION: 2.16.0
   DATASTORE_PATH: ''
-  reason: 'A very good reason'
-  n_eval_samples: 1000
-  n_test_samples: 1000
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -65,8 +57,8 @@ jobs:
         inlinescript: |
           az extension add -n ml --version $AZ_ML_CLI_VERSION
 
-          job_xargs="--set inputs.n_eval_samples=${{ env.n_eval_samples }} \
-                     --set inputs.n_test_samples=${{ env.n_test_samples }} \
+          job_xargs="--set inputs.n_eval_samples=${{ github.event.inputs.n_eval_samples }} \
+                     --set inputs.n_test_samples=${{ github.event.inputs.n_test_samples }} \
                      --set outputs.outputs_path.path=$DATASET_PATH \
                      --set experiment_name=dataprep \
                      --name $VERSION \
@@ -100,6 +92,6 @@ jobs:
             --set description="Job url: $url" \
             --set version=$VERSION \
             --set path=$DATASET_PATH \
-            --set tags.reason="${{ env.reason }}" \
-            --set tags.n_eval_samples=${{ env.n_eval_samples }} \
-            --set tags.n_test_samples=${{ env.n_test_samples }}
+            --set tags.reason="${{ github.event.inputs.reason }}" \
+            --set tags.n_eval_samples=${{ github.event.inputs.n_eval_samples }} \
+            --set tags.n_test_samples=${{ github.event.inputs.n_test_samples }}
