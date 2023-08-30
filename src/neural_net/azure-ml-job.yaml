@@ -8,7 +8,7 @@ experiment_name: neural_net
 # What to run
 command: >-
   accelerate launch
-  --config_file accelerate_config.yaml
+  --config_file accelerate_cpu_config.yaml
   --num_machines ${{inputs.num_machines}}
   --num_processes ${{inputs.num_processes}}
   --machine_rank $NODE_RANK
@@ -44,7 +44,7 @@ environment:
   build:
     path: ./environment
 
-compute: azureml:gpu-lion-cluster
+compute: azureml:cpu-cat-cluster
 
 # Where to run it
 environment:
